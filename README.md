@@ -1,4 +1,4 @@
-![soapbox](assets/soapbox.png)
+# ![soapbox](assets/logo.png)
 
 ## What is soapbox?
 - **Static blog engine/generator**
