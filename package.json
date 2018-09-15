@@ -1,0 +1,27 @@
+{
+  "name": "soapbox",
+  "version": "0.0.1",
+  "description": "Static blog engine/generator",
+  "author": "Soumya Deb <debloper@gmail.com>",
+  "license": "Unlicense",
+  "repository": "github:debloper/soapbox",
+  "homepage": "https://code.debs.io/soapbox",
+  "bugs": {
+    "url": "https://github.com/debloper/soapbox/issues"
+  },
+  "scripts": {
+    "parse": "bin/parse"
+  },
+  "keywords": [
+    "static",
+    "blog",
+    "generator",
+    "engine",
+    "html-css-javascript",
+    "blogging"
+  ],
+  "dependencies": {
+    "gray-matter": "^4.0.1",
+    "yargs": "^12.0.2"
+  }
+}

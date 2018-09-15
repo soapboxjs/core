@@ -1,0 +1,55 @@
+#!/usr/bin/env node
+
+// Core modules
+const fs = require('fs')
+const path = require('path')
+
+// 3rd party modules
+const fm = require('gray-matter')
+const args = require('yargs').argv
+
+// If no path to content was provided,
+// Use `contents` as fallback directory
+let pathFallback = process.cwd() + "/contents"
+
+// Set the content directory, in order of priority
+// @TODO: resolve & finalize config/variable names
+let contents = args.path || process.env.contents || pathFallback
+
+let distDir = process.cwd() + "/dist"
+let dataDir = distDir + "/data/"
+
+// Now that we have the directory to read from
+// Let's read files inside, and parse them too
+fs.readdir(contents, function (err, files) {
+
+  if (err) throw err
+
+  // Create data directory to store JSONs,
+  // Only if there're more than one files, 
+  // & the directory doesn't already exist
+  if (files.length && !fs.existsSync(dataDir)) {
+    fs.mkdirSync(distDir, 0o775)
+    fs.mkdirSync(dataDir, 0o775)
+  }
+
+  // Now, to the interesting part
+  // Iterate over all the files to be parsed
+  for (let file of files) {
+
+    // Resolve full file name, for reusability
+    file = [contents, '/', file].join('')
+
+    // Read & parse each file with gray-matter `read()`
+    let parsed = fm.read(file)
+
+    // Derive the respective JSON file path, that is to be created
+    let newFile = [dataDir, path.parse(file).name, '.json'].join('')
+
+    // Write files to the data destination, show status
+    fs.writeFile(newFile, JSON.stringify(parsed), { mode: 0o664 }, function (e) {
+      if (e) throw e
+      console.log(file + ' parsed to ' + newFile)
+    })
+  }
+})

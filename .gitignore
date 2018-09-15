@@ -1,0 +1,5 @@
+# Node.js & npm related
+node_modules
+
+# Build related
+dist
