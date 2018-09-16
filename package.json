@@ -11,7 +11,8 @@
   },
   "scripts": {
     "parse": "bin/parse",
-    "generate": "bin/generate"
+    "generate": "bin/generate",
+    "clean": "rm -rf node_modules dist"
   },
   "keywords": [
     "static",
