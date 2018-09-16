@@ -13,8 +13,12 @@
     <a href="https://github.com/debloper/soapbox/" target="_blank">GitHub</a>
     <a href="/">Blog</a>
   </nav>
-  <section>
-    Content goes here!
+  <section id="content">
+    {{~it :post:id}}
+    <div>
+      <a href="{{=post.path}}">{{=post.title}} on {{=post.date}}</a>
+    </div>
+    {{~}}
   </section>
   <footer>
     <code>{}</code> with <code>&lt;3</code> by Deb

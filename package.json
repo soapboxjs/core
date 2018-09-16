@@ -10,7 +10,8 @@
     "url": "https://github.com/debloper/soapbox/issues"
   },
   "scripts": {
-    "parse": "bin/parse"
+    "parse": "bin/parse",
+    "generate": "bin/generate"
   },
   "keywords": [
     "static",
@@ -21,6 +22,7 @@
     "blogging"
   ],
   "dependencies": {
+    "dot": "^1.1.2",
     "gray-matter": "^4.0.1",
     "yargs": "^12.0.2"
   }

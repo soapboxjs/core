@@ -8,20 +8,27 @@ const path = require('path')
 const fm = require('gray-matter')
 const args = require('yargs').argv
 
-// If no path to content was provided,
-// Use `contents` as fallback directory
-let pathFallback = process.cwd() + "/contents"
-
 // Set the content directory, in order of priority
+// If no `--path` was provided, use `./contents` as fallback
 // @TODO: resolve & finalize config/variable names
-let contents = args.path || process.env.contents || pathFallback
+const contents = args.path || process.env.contents || (process.cwd() + "/contents")
 
-let distDir = process.cwd() + "/dist"
-let dataDir = distDir + "/data/"
+// Evaluate the posts directory inside contents
+// @TODO: get rid of hard coded directory names
+// @TODO: later we'll use same method for pages
+const postsDir = contents + "/posts/"
+
+// Generated artifacts are put in these directories
+// @TODO: get rid of hard coded directory names
+const distDir = process.cwd() + "/dist"
+const dataDir = distDir + "/data/"
+
+// Data for building index page (posts' list)
+let postsList = []
 
 // Now that we have the directory to read from
 // Let's read files inside, and parse them too
-fs.readdir(contents, function (err, files) {
+fs.readdir(postsDir, function (err, files) {
 
   if (err) throw err
 
@@ -35,13 +42,27 @@ fs.readdir(contents, function (err, files) {
 
   // Now, to the interesting part
   // Iterate over all the files to be parsed
+  // @TODO: write a recursive file-tree-walker
   for (let file of files) {
 
     // Resolve full file name, for reusability
-    file = [contents, '/', file].join('')
+    file = [postsDir, file].join('')
 
     // Read & parse each file with gray-matter `read()`
     let parsed = fm.read(file)
+
+    // Post meta-data for `postsList`
+    // @TODO: the path may not be same as slug
+    //        shouldn't force a convention here
+    let post = {
+      date: parsed.data.date,
+      path: path.parse(file).name,
+      title: parsed.data.title,
+      summary: parsed.excerpt
+    }
+
+    // And put the post metadata in `postsList`
+    postsList.push(post)
 
     // Derive the respective JSON file path, that is to be created
     let newFile = [dataDir, path.parse(file).name, '.json'].join('')
@@ -52,4 +73,11 @@ fs.readdir(contents, function (err, files) {
       console.log(file + ' parsed to ' + newFile)
     })
   }
+
+  // Now that we've been through all the posts, our postList is fully pupolated
+  // @TODO: use some sort of ordering before writing the data to disk
+  fs.writeFile((dataDir + 'index.json'), JSON.stringify(postsList), { mode: 0o664 }, function (e) {
+    if (e) throw e
+    console.log('List of posts written to: ' + dataDir + 'index.json')
+  })
 })
