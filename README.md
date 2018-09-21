@@ -1,4 +1,4 @@
-# ![soapbox](assets/logo.png)
+# ![soapbox](https://soapboxjs.github.io/logo.png)
 
 **A static site framework, which is:**
 
