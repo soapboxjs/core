@@ -1,0 +1,196 @@
+#!/usr/bin/env node
+
+/* -------------------------------------------------------------------------- */
+
+// Core modules
+const fsx = require('fs-extra')
+const path = require('path')
+
+// 3rd party modules
+const fm = require('gray-matter')
+const args = require('yargs').argv
+
+/* -------------------------------------------------------------------------- */
+
+// Set the content directory, in order of priority
+// If no `--contents` was provided, and env-var has been set
+// Then use `./contents` as fallback/default
+const dContents = args.contents || process.env.contents || (process.cwd() + '/contents')
+
+// Similarly, set the app, assets, data directory, with respective defaults
+const dData   = args.data     || process.env.data     || (dContents + '/data')
+const dApp    = args.appShell || process.env.appShell || (dContents + '/app')
+const dAssets = args.assets   || process.env.assets   || (dContents + '/assets')
+
+// Same goes for posts & pages, with respective defaults
+const dPosts = args.posts || process.env.posts || (dData +  '/posts')
+const dPages = args.pages || process.env.pages || (dData +  '/pages')
+
+// Path to preprocessed artifacts that are ready to be built
+// NOTE: WE PROCESS THE BUILD IN 2 PHASES, PREP IS THE FIRST PASS.
+const dPrep = args.prep   || process.env.prep   || process.cwd() + '/prep'
+const dPrepData = dPrep + '/data'
+const dPrepPosts = dPrepData + '/posts'
+const dPrepPages = dPrepData + '/pages'
+
+/* -------------------------------------------------------------------------- */
+
+// Data for building index page (posts' list)
+let listPosts = []
+
+// Data for additional pages (pages' list)
+let listPages = []
+
+// Create `./prep` directory, the container for the end-result of this phase
+fsx.ensureDirSync(dPrep, 0o775)
+
+/* -------------------------------------------------------------------------- */
+
+// Copy assets to the root of `./prep` directory
+fsx.readdir(dAssets, function (err, assets) {
+  if (err) throw err
+  console.log('Intiating copying of assets:')
+
+  // @TODO: this is where conditional transformers may be plugged-in
+  for (let asset of assets) {
+    let assetFrom = [dAssets, '/', asset].join('')
+    let assetTo   = [dPrep,   '/', asset].join('')
+
+    fsx.copy(assetFrom, assetTo, e => {
+      if (e) throw e
+      console.log('Copied ' + asset + ' to ' + dPrep)
+    })
+  }
+})
+
+/* -------------------------------------------------------------------------- */
+
+// Process app-shell (for now, this step is identical to assets copying)
+fsx.readdir(dApp, function (err, apps) {
+  if (err) throw err
+  console.log('Processing app shell:')
+
+  // @TODO: implement the processing of app-shell
+  for (let app of apps) {
+    let appFrom = [dApp, '/', app].join('')
+    let appTo   = [dPrep,'/', app].join('')
+
+    fsx.copy(appFrom, appTo, e => {
+      if (e) throw e
+      console.log('Procesed ' + app)
+    })
+  }
+})
+
+/* -------------------------------------------------------------------------- */
+
+// Next step is to process the data, starting with the posts
+fsx.readdir(dPosts, function (err, posts) {
+  if (err) throw err
+
+  // If there are no posts to be processed, skip over
+  if (!posts.length) {
+    console.log('No posts to be processed.')
+    return
+  }
+
+  // Create directory to store posts JSONs
+  fsx.ensureDirSync(dPrepPosts, 0o775)
+
+  // Now, to the interesting part
+  // Iterate over all the files to be parsed
+  // @TODO: use a recursive file-tree-walker
+  for (let post of posts) {
+
+    // Resolve full file name, for reusability
+    post = [dPosts, '/', post].join('')
+
+    // Read & parse each file with gray-matter `read()`
+    let parsed = fm.read(post)
+
+    // Post meta-data for `listPosts`
+    // @TODO: the path may not be same as slug
+    //        shouldn't force a convention here
+    let postMeta = {
+      date: parsed.data.date,
+      path: path.parse(post).name,
+      title: parsed.data.title,
+      summary: parsed.excerpt
+    }
+
+    // And put the post metadata in `postsList`
+    listPosts.push(postMeta)
+
+    // Derive the respective JSON file path, that is to be created
+    let newPost = [dPrepPosts, '/', path.parse(post).name, '.json'].join('')
+
+    // Write files to the data destination, show status
+    fsx.writeJSON(newPost, parsed, function (e) {
+      if (e) throw e
+      console.log('Processed ' + post + ' to ' + newPost)
+    })
+  }
+
+  // Now that we've been through all the posts, our posts' list is fully populated
+  // @TODO: use some sort of ordering before writing the data to disk
+  fsx.writeJSON((dPrepData + 'posts.json'), listPosts, function (e) {
+    if (e) throw e
+    console.log('List of posts written to: ' + dPrepData + '/posts.json')
+  })
+})
+
+/* -------------------------------------------------------------------------- */
+
+// Pretty much the same approach for processing the pages
+fsx.readdir(dPages, function (err, pages) {
+  if (err) throw err
+
+  // If there are no pages to be processed, skip over
+  if (!pages.length) {
+    console.log('No pages to be processed.')
+    return
+  }
+
+  // Create directory to store pages JSONs
+  fsx.ensureDirSync(dPrepPages, 0o775)
+
+  // Again, iterate over all the files to be parsed
+  // @TODO: use a recursive file-tree-walker
+  for (let page of pages) {
+
+    // Resolve full file name, for reusability
+    page = [dPages, '/', page].join('')
+
+    // Read & parse each file with gray-matter `read()`
+    let parsed = fm.read(page)
+
+    // Page meta-data for `listPages`
+    // @TODO: the path may not be same as slug
+    //        shouldn't force a convention here
+    let pageMeta = {
+      date: parsed.data.date,
+      path: path.parse(page).name,
+      title: parsed.data.title,
+      summary: parsed.excerpt
+    }
+
+    // Then push the page metadata in `listPages`
+    listPosts.push(postMeta)
+
+    // Derive the respective JSON file path, that is to be created
+    let newPage = [dPrepPages, '/', path.parse(page).name, '.json'].join('')
+
+    // Write files to the data destination, show status
+    fsx.writeJSON(newPage, parsed, function (e) {
+      if (e) throw e
+      console.log('Processed ' + page + ' to ' + newPage)
+    })
+  }
+
+  // Now that we've been through all the pages, our pages' list is fully populated
+  // @TODO: use some sort of ordering before writing the data to disk
+  fsx.writeJSON((dPrepData + 'pages.json'), listPages, function (e) {
+    if (e) throw e
+    console.log('List of posts written to: ' + dPrepData + '/pages.json')
+  })
+})
