@@ -12,6 +12,7 @@
   "scripts": {
     "prep": "bin/prep",
     "build": "bin/build",
+    "reset": "rm -rf prep build",
     "clean": "rm -rf node_modules prep build"
   },
   "keywords": [
@@ -23,9 +24,9 @@
     "blogging"
   ],
   "dependencies": {
-    "dot": "^1.1.2",
     "fs-extra": "^7.0.0",
     "gray-matter": "^4.0.1",
+    "liquidjs": "^6.0.0",
     "yargs": "^12.0.2"
   }
 }

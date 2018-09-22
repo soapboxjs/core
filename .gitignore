@@ -2,5 +2,5 @@
 node_modules
 
 # Build related
+dist
 prep
-build

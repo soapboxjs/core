@@ -2,13 +2,11 @@
 
 /* -------------------------------------------------------------------------- */
 
-// Core modules
-const fsx = require('fs-extra')
-const path = require('path')
-
-// 3rd party modules
-const fm = require('gray-matter')
+// Importing modules
 const args = require('yargs').argv
+const fm   = require('gray-matter')
+const fsx  = require('fs-extra')
+const path = require('path')
 
 /* -------------------------------------------------------------------------- */
 
@@ -86,6 +84,16 @@ fsx.readdir(dApp, function (err, apps) {
 
 // Next step is to process the data, starting with the posts
 fsx.readdir(dPosts, function (err, posts) {
+
+  // If the posts directory doesn't exists,
+  // Or, no posts are to be processed
+  // Then report and skip over
+  if ((!!err && err.code === 'ENOENT') || !posts.length) {
+    console.log('No posts are to be processed.')
+    return
+  }
+
+  // For other error(s), throw generic tantrums
   if (err) throw err
 
   // If there are no posts to be processed, skip over
@@ -133,7 +141,7 @@ fsx.readdir(dPosts, function (err, posts) {
 
   // Now that we've been through all the posts, our posts' list is fully populated
   // @TODO: use some sort of ordering before writing the data to disk
-  fsx.writeJSON((dPrepData + 'posts.json'), listPosts, function (e) {
+  fsx.writeJSON((dPrepData + '/posts.json'), listPosts, function (e) {
     if (e) throw e
     console.log('List of posts written to: ' + dPrepData + '/posts.json')
   })
@@ -143,13 +151,17 @@ fsx.readdir(dPosts, function (err, posts) {
 
 // Pretty much the same approach for processing the pages
 fsx.readdir(dPages, function (err, pages) {
-  if (err) throw err
 
-  // If there are no pages to be processed, skip over
-  if (!pages.length) {
-    console.log('No pages to be processed.')
+  // If the pages directory doesn't exists,
+  // Or, no pages are to be processed
+  // Then report and skip over
+  if ((!!err && err.code === 'ENOENT') || !pages.length) {
+    console.log('No pages are to be processed.')
     return
   }
+
+  // For other error(s), throw generic tantrums
+  if (err) throw err
 
   // Create directory to store pages JSONs
   fsx.ensureDirSync(dPrepPages, 0o775)
@@ -189,7 +201,7 @@ fsx.readdir(dPages, function (err, pages) {
 
   // Now that we've been through all the pages, our pages' list is fully populated
   // @TODO: use some sort of ordering before writing the data to disk
-  fsx.writeJSON((dPrepData + 'pages.json'), listPages, function (e) {
+  fsx.writeJSON((dPrepData + '/pages.json'), listPages, function (e) {
     if (e) throw e
     console.log('List of posts written to: ' + dPrepData + '/pages.json')
   })

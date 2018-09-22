@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+
+/* -------------------------------------------------------------------------- */
+
+// Importing modules
+const args = require('yargs').argv
+const fsx  = require('fs-extra')
+const tmpl = require('liquidjs')()
+
+/* -------------------------------------------------------------------------- */
+
+// Directory path discovery for processing
+const dRoot = process.cwd()
+const dPrep = args.from  || process.env.prep || (dRoot + '/prep')
+const dDist = args.to    || process.env.dist || (dRoot + '/dist')
+
+// Template files
+// @TODO: get tid of hard-coding filenames
+const tIndex = dPrep + '/home.html'
+const tPosts = dPrep + '/posts.html'
+const tPages = dPrep + '/pages.html'
+
+// Data files
+// @TODO: get tid of hard-coding filenames
+const jIndex = fsx.readJSONSync(dPrep + '/data/posts.json')
+const jPosts = dPrep + '/data/posts'
+const jPages = dPrep + '/data/pages'
+
+/* -------------------------------------------------------------------------- */
+
+// First, let's generate the `index.html` from homepage template
+// @TODO: decouple template rendering, to allow alternatives
+tmpl.renderFile(tIndex, jIndex).then(pIndex => {
+  fsx.outputFile((dDist + '/index.html'), pIndex, { mode: 0o664 }, e => {
+    if (e) throw e
+    console.log('Generated index file.')
+  })
+})
